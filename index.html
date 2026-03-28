@@ -3,87 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEON EDIT | Admin Dashboard & Marketplace</title>
+    <title>NEON EDIT | Private Marketplace</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; }
-        .neon-blue { text-shadow: 0 0 10px #3b82f6; border-color: #3b82f6; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
-        .neon-green { text-shadow: 0 0 10px #22c55e; border-color: #22c55e; box-shadow: 0 0 10px rgba(34, 197, 94, 0.5); }
-        .neon-red { text-shadow: 0 0 10px #ef4444; border-color: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
-        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        body { background: #000; color: #fff; font-family: 'Montserrat', sans-serif; overflow-x: hidden; }
+        .tall { font-family: 'Bebas Neue', sans-serif; letter-spacing: 3px; }
+        
+        /* Premium Neon Glows */
+        .neon-blue { text-shadow: 0 0 15px rgba(59, 130, 246, 0.8); }
+        .neon-green { text-shadow: 0 0 20px rgba(34, 197, 94, 0.9); }
+        .neon-border-blue { border: 1px solid #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+        .neon-border-green { border: 2px solid #22c55e; box-shadow: 0 0 30px rgba(34, 197, 94, 0.5); }
+        
+        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
+
+        /* Order Animation Overlay */
+        #success-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 200;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .tick-mark {
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            display: block;
+            stroke-width: 2;
+            stroke: #22c55e;
+            stroke-miterlimit: 10;
+            box-shadow: inset 0px 0px 0px #22c55e;
+            animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s cubic-bezier(0.47, 0, 0.745, 0.715) forwards;
+        }
+
+        @keyframes fill { 100% { box-shadow: inset 0px 0px 0px 50px #22c55e; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <nav class="glass fixed w-full z-50 p-4 flex justify-between items-center px-10">
-        <h1 class="text-2xl font-black tracking-tighter">NEON<span class="text-blue-500">EDIT</span></h1>
-        <button onclick="document.getElementById('admin-panel').classList.toggle('hidden')" class="text-xs border border-gray-600 px-3 py-1 rounded hover:neon-blue">ADMIN PANEL</button>
+    <div id="success-overlay">
+        <svg class="tick-mark neon-green" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+            <circle class="tick-circle" cx="26" cy="26" r="25" fill="none" stroke="#22c55e" stroke-width="2"/>
+            <path class="tick-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" stroke="#fff" stroke-width="4"/>
+        </svg>
+        <h2 class="tall text-6xl mt-8 neon-green">ORDER SUCCESSFUL</h2>
+        <p class="text-gray-400 mt-2 tracking-widest uppercase text-sm italic">Preparing your assets for download...</p>
+    </div>
+
+    <nav class="glass fixed w-full z-50 px-10 py-5 flex justify-between items-center">
+        <div class="text-3xl tall font-bold uppercase tracking-widest cursor-pointer" onclick="location.reload()">NEON<span class="text-blue-500 neon-blue">EDIT</span></div>
+        <div class="flex items-center space-x-6">
+            <button id="admin-btn" onclick="toggleUploadForm()" class="hidden bg-white text-black px-6 py-2 rounded-full font-bold text-xs hover:neon-border-blue transition-all">
+                + ADMIN UPLOAD
+            </button>
+            <div class="relative cursor-pointer" onclick="toggleCart()">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                <span id="cart-count" class="absolute -top-2 -right-2 bg-blue-500 text-[10px] rounded-full px-1.5 py-0.5 font-bold">0</span>
+            </div>
+        </div>
     </nav>
 
-    <section id="admin-panel" class="hidden pt-24 px-10">
-        <div class="glass p-8 rounded-2xl max-w-2xl mx-auto border-blue-500 border">
-            <h2 class="text-xl font-bold mb-4 neon-blue">Upload New Asset</h2>
-            <div class="grid grid-cols-2 gap-4">
-                <input id="assetName" type="text" placeholder="Asset Name" class="bg-black border border-gray-700 p-2 rounded outline-none focus:border-blue-500">
-                <select id="assetType" class="bg-black border border-gray-700 p-2 rounded">
-                    <option value="VFX">VFX</option>
-                    <option value="SFX">SFX</option>
-                    <option value="Clip">Cinematic Clip</option>
+    <div id="upload-modal" class="hidden fixed inset-0 bg-black/95 z-[150] flex items-center justify-center p-6 backdrop-blur-xl">
+        <div class="glass p-10 rounded-[3rem] w-full max-w-2xl border-blue-500 border-2">
+            <h2 class="tall text-5xl mb-8 neon-blue">NEW ASSET UPLOAD</h2>
+            <div class="space-y-4">
+                <input id="upName" type="text" placeholder="Asset Name" class="w-full bg-[#0a0a0a] border border-gray-800 p-4 rounded-2xl outline-none focus:neon-border-blue">
+                <select id="upType" class="w-full bg-[#0a0a0a] border border-gray-800 p-4 rounded-2xl outline-none">
+                    <option value="VFX">VFX</option><option value="SFX">SFX</option><option value="GFX">GFX</option><option value="CLIP">CLIPS</option>
                 </select>
-                <input id="assetPrice" type="number" placeholder="Price (0 for Free)" class="bg-black border border-gray-700 p-2 rounded outline-none">
-                <input id="assetImg" type="text" placeholder="Thumbnail URL (Imgur link)" class="bg-black border border-gray-700 p-2 rounded outline-none">
+                <input id="upPrice" type="number" placeholder="Price (0 for Free)" class="w-full bg-[#0a0a0a] border border-gray-800 p-4 rounded-2xl outline-none focus:neon-border-blue">
+                <input id="upImg" type="text" placeholder="Thumbnail Image URL" class="w-full bg-[#0a0a0a] border border-gray-800 p-4 rounded-2xl outline-none focus:neon-border-blue">
             </div>
-            <button onclick="handleUpload()" class="w-full mt-4 bg-blue-600 py-2 rounded font-bold hover:neon-blue">PUBLISH ASSET</button>
+            <div class="flex space-x-4 mt-10">
+                <button onclick="publishNow()" class="flex-1 bg-blue-600 py-4 rounded-2xl font-bold tall text-xl hover:neon-border-blue transition">PUBLISH LIVE</button>
+                <button onclick="toggleUploadForm()" class="px-8 py-4 border border-gray-800 rounded-2xl hover:text-red-500">CANCEL</button>
+            </div>
         </div>
-    </section>
+    </div>
 
-    <section class="pt-40 pb-20 text-center">
-        <h1 class="text-7xl font-black mb-4">UPGRADE YOUR <span class="text-blue-500 neon-blue">EDITS</span></h1>
-        <p class="text-gray-400">Premium VFX, SFX & Overlays for Pro Editors</p>
-    </section>
+    <header class="pt-60 pb-32 text-center">
+        <h1 class="text-8xl md:text-[12rem] tall font-black leading-none mb-4 tracking-tighter">
+            <span class="text-white">UPGRADE</span><br>
+            <span class="text-transparent bg-clip-text bg-gradient-to-b from-blue-400 to-blue-700 neon-blue">YOUR EDITS</span>
+        </h1>
+    </header>
 
-    <div id="market-grid" class="grid grid-cols-1 md:grid-cols-3 gap-8 px-10 pb-20">
-        </div>
+    <main class="max-w-7xl mx-auto px-10 pb-40">
+        <div id="product-grid" class="grid grid-cols-1 md:grid-cols-3 gap-12"></div>
+    </main>
 
     <script>
-        // Data Store (Yeh browser ki memory mein save hoga)
-        let myAssets = JSON.parse(localStorage.getItem('neonAssets')) || [
-            { name: "Sample Glitch", type: "VFX", price: 0, img: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?w=400" }
-        ];
+        let assets = JSON.parse(localStorage.getItem('neon_data')) || [];
+        let cart = [];
 
-        function renderMarket() {
-            const grid = document.getElementById('market-grid');
-            grid.innerHTML = myAssets.map((item, index) => `
-                <div class="glass p-4 rounded-xl border border-gray-800 hover:neon-blue transition duration-300">
-                    <img src="${item.img}" class="w-full h-40 object-cover rounded-lg mb-4">
-                    <div class="flex justify-between items-center">
-                        <h3 class="font-bold">${item.name}</h3>
-                        <span class="${item.price == 0 ? 'text-green-500 neon-green' : 'text-red-500 neon-red'} font-bold">
+        // SECRET KEY LOGIC: Keyboard par 'A' 'D' 'M' ek sath dabao
+        let keys = {};
+        window.onkeydown = function(e) {
+            keys[e.key.toLowerCase()] = true;
+            if (keys['a'] && keys['d'] && keys['m']) {
+                document.getElementById('admin-btn').classList.toggle('hidden');
+                alert("ADMIN MODE ACTIVATED");
+                keys = {};
+            }
+        };
+        window.onkeyup = function(e) { keys[e.key.toLowerCase()] = false; };
+
+        function toggleUploadForm() { document.getElementById('upload-modal').classList.toggle('hidden'); }
+
+        function publishNow() {
+            const name = document.getElementById('upName').value;
+            const price = document.getElementById('upPrice').value;
+            const img = document.getElementById('upImg').value || "https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg?w=400";
+            if(!name || price === "") return;
+            assets.unshift({ name, type: document.getElementById('upType').value, price: parseInt(price), img });
+            localStorage.setItem('neon_data', JSON.stringify(assets));
+            render(); toggleUploadForm();
+        }
+
+        function render() {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = assets.map((item, index) => `
+                <div class="glass p-6 rounded-[2.5rem] border-gray-900 hover:neon-border-blue transition-all duration-500 group">
+                    <img src="${item.img}" class="w-full h-52 object-cover rounded-3xl mb-6 group-hover:scale-105 transition duration-500">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <span class="text-[10px] text-blue-500 font-bold tracking-widest uppercase">${item.type}</span>
+                            <h3 class="text-2xl tall font-bold tracking-tight">${item.name}</h3>
+                        </div>
+                        <span class="text-sm font-black ${item.price == 0 ? 'text-green-500 neon-green' : 'text-blue-400'}">
                             ${item.price == 0 ? 'FREE' : '$' + item.price}
                         </span>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">${item.type}</p>
-                    <button class="w-full mt-4 py-2 border ${item.price == 0 ? 'border-green-500 text-green-500 hover:bg-green-500' : 'border-red-500 text-red-500 hover:bg-red-500'} hover:text-black rounded font-bold transition">
-                        ${item.price == 0 ? 'DOWNLOAD' : 'ADD TO CART'}
+                    <button onclick="handleOrder(${item.price}, '${item.name}')" 
+                            class="w-full py-4 rounded-2xl border-2 font-bold tall text-lg transition duration-300
+                            ${item.price == 0 ? 'border-green-600 text-green-500 hover:bg-green-600 hover:text-black' : 'border-blue-600 text-blue-500 hover:bg-blue-600 hover:text-white'}">
+                        ${item.price == 0 ? 'DOWNLOAD' : 'BUY NOW'}
                     </button>
-                    <button onclick="deleteAsset(${index})" class="mt-2 text-[10px] text-gray-600 hover:text-red-500">Remove from store</button>
+                    <button onclick="deleteAsset(${index})" class="mt-4 text-[9px] text-gray-800 hover:text-red-500 block w-full text-center">Delete</button>
                 </div>
             `).join('');
         }
 
-        function handleUpload() {
-            const name = document.getElementById('assetName').value;
-            const type = document.getElementById('assetType').value;
-            const price = document.getElementById('assetPrice').value;
-            const img = document.getElementById('assetImg').value || "https://via.placeholder.com/400x225/000000/FFFFFF?text=No+Preview";
+        function handleOrder(price, name) {
+            if(price === 0) {
+                alert("Downloading: " + name);
+            } else {
+                // Trigger Custom Animation
+                const overlay = document.getElementById('success-overlay');
+                overlay.style.display = 'flex';
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    alert("Order processed for: " + name);
+                }, 3000);
+            }
+        }
 
-            if(!name || !price) return alert("Please fill details");
-
-            const newAsset = { name, type, price: parseInt(price), img };
-            myAssets.push(newAsset);
-            
-            // Save to browser memory
-            localStorage.setItem('neonAssets', JSON.stringify(myAssets));
-            
-            renderMarket();
-            alert("
+        function deleteAsset(i) { assets.splice(i,1); localStorage.setItem('neon_data', JSON.stringify(assets)); render(); }
+        render();
+    </script>
+</body>
+</html>
